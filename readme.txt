@@ -1,113 +1,109 @@
-﻿=== Plugin Name ===
+﻿=== Publicize With Hashtags ===
 Contributors: neilgaiman
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JSTHA4HMVSQ8J
-Tags: jetpack, publicize, hashtag, hashtags, sharing, share, social, twitter, tweet
-Requires at least: 3.0.1
-Tested up to: 4.3
-Stable tag: trunk
-License: GPLv2
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Tags: jetpack, jetpack social, publicize, hashtags, social
+Requires at least: 5.6
+Tested up to: 7.1
+Requires PHP: 7.2
+Stable tag: 0.2.0
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Automatically append hashtags to content sent by Jetpack Publicize module. Hashtags will be created using post tags. Dupe and length check included.
+Appends the post tags, as hashtags, to the message that Jetpack Social shares on your social networks.
 
 == Description ==
 
-**IMPORTANT**: This plugin requires Jetpack's Publicize module: read below for additional info.
+**Maintenance mode.** This plugin receives compatibility and security fixes, but no new features. Jetpack Social now has a built-in `{tags}` placeholder for its message templates: if your Jetpack plan includes message templates, you can use it instead of this plugin.
 
-As the name says, this plugin will automatically append hashtags to any content sent by **Jetpack's Publicize** module. This means that **the plugin will work only if the Jetpack plugin is already installed on your Wordpress platform with the Publicize module set to active**. Don't worry, tho: if any of these requirements are missing this plugin won't do anything, without breaking your blog or compromising its performance in any way.
+Publicize With Hashtags turns the tags of your posts into hashtags and appends them to the message that **Jetpack Social** (formerly Jetpack Publicize) shares on Facebook, Threads, Bluesky, LinkedIn, Mastodon and the other supported networks.
 
-**Plugin Features**
+It works with the full **Jetpack** plugin (with the Social module active) and with the standalone **Jetpack Social** plugin, in both the block editor and the classic editor. Without Jetpack Social it does nothing.
 
-* Hashtags will be created using the post `tags`, (optionally) trimming the space chars, until the maximum character length is reached (if any).
-* You'll still be able to manually add custom hashtags, pre-pending or appending them to the auto-generated ones just like you always did.
-* You can reorder the hashtags as you like, regardless of how they were added.
-* Dupe check included, ensuring that the same hashtag won't be included multiple times - unless you manually do that.
-* Automatically added hashtags won't break the *118-character limits* of the social message text to keep the message length under the standard *tweet + link* limit.
-* The above character-length threshold can be changed and/or set to infinite with ease.
+**Features**
 
-**Useful Links**
+* Each post tag becomes a hashtag, with its spaces removed: `Open Source` becomes `#OpenSource`.
+* Hashtags you write yourself are kept, and the plugin never adds a hashtag that is already in the message.
+* If the post has no custom message, the hashtags are appended to the post title.
+* Works with every post type that Jetpack Social can share, as long as it uses tags.
+* Posts that are already published are never changed.
 
-* [Plugin SVN Repository](http://plugins.svn.wordpress.org/publicize-with-hashtags/) hosted by Wordpress.org (in real-time sync with the GitHub repo).
-* [Plugin GitHub Repository](https://github.com/Darkseal/publicize-with-hashtags) (in real-time sync with the official SVN repo).
-* [Plugin GitHub Page](http://darkseal.github.io/publicize-with-hashtags/).
-* [Plugin official page](http://www.ryadel.com/works/publicize-with-hashtags/) at [Ryadel.com](http://www.ryadel.com/).
-* [Installation & Usage Guide](http://www.ryadel.com/en/add-hashtags-to-jetpack-publicize-shared-posts/) at [Ryadel.com](http://www.ryadel.com/).
+**Useful links**
 
-
+* [GitHub repository](https://github.com/Darkseal/publicize-with-hashtags) (issues and pull requests).
+* [Installation and usage guide](https://www.ryadel.com/en/add-hashtags-to-jetpack-publicize-shared-posts/) at Ryadel.com (written for the classic editor).
 
 == Installation ==
 
-Go to the **Plugins > Add New...** panel in the WP Admin interface, search for "publicize with hashtags" and click **Install**.
-
-If you prefer to install the plugin manually, you can do the following:
-
-1. Go to the [plugin page](https://wordpress.org/plugins/publicize-with-hashtags/) on the Wordpress Plugin Browser and click the **Download** button to get the latest version to your HDD.
-2. Upload the **publicize-with-hashtags.zip** file using the Wordpress *upload plugin* feature OR unpack its contents inside the `/wp-content/plugins/` folder.
-3. Activate the plugin through the 'Plugins' menu in WordPress.
-4. Take a look at the plugin's source code and change its default settings if needed.
-
-
+1. Install and activate **Jetpack Social** (or **Jetpack**, with the Social module active) and connect your social accounts.
+2. In **Plugins > Add New Plugin**, search for "Publicize With Hashtags", then install and activate it.
+3. Add tags to your posts: their hashtags are added to the sharing message when you save or publish the post.
 
 == Frequently Asked Questions ==
 
-= What if I manually insert one or more hashtags? =
+= When are the hashtags added? =
 
-They will be kept as they are: the plugin won't strip out anything, it will simply add the "missing" hashtags to the Custom Message box.
+When you publish or schedule the post, right before Jetpack shares it. If you have written a custom sharing message, they are also added every time you save a draft or a pending post, so you can see them and move them around before publishing. Posts that are already published are left untouched.
 
-= What if I already inserted an hashtags identical to an existing post tag? =
+= What if I write some hashtags myself? =
 
-It won't be added again, as long as it's case-insensitive equal to the first one. The plugin will never insert a dupe hashtag on its own.
+They stay where you put them, and the plugin won't add them a second time (the check ignores case).
 
+= I use a Jetpack message template. Does the plugin change it? =
 
+No. When the post uses your site's message template, the plugin leaves it alone, so that Jetpack can fill in its placeholders: add `{tags}` to the template to get the hashtags. The plugin also does nothing when the message already contains `{tags}`.
+
+= Does it work with per-network custom messages? =
+
+No: it only changes the main sharing message. Messages customized for a single network are left as they are.
+
+= Can I change the hashtags or limit the message length? =
+
+Yes, with two filters:
+
+* `publicize_with_hashtags_hashtags` filters the array of hashtags (with the leading `#`) before they are appended, for example to add the categories too;
+* `publicize_with_hashtags_max_length` sets the maximum length of the message, in characters: hashtags that don't fit are not added. The default, `0`, means no limit.
+
+Example:
+
+`add_filter( 'publicize_with_hashtags_max_length', function () { return 280; } );`
 
 == Screenshots ==
 
-1. The plugin will automatically trasform your post tags to hashtags and append them to the Publicize Widget's Custom Message box. Any existing, manually inserted hashtag will be kept and/or won't be added a second time if also included as a tag.
-
-
+1. The post tags become hashtags in the Jetpack sharing message (classic editor).
 
 == Changelog ==
 
+= 0.2.0 =
+* Works again with the block editor and with the standalone Jetpack Social plugin.
+* Fixed the `Jetpack_Options` notice shown when the plugin loaded before Jetpack (GitHub issue #2).
+* Supports every post type that Jetpack Social can share.
+* Leaves Jetpack message templates, and messages that use `{tags}`, untouched.
+* Removed the 118-character limit, designed for Twitter: there is no limit by default (see the `publicize_with_hashtags_max_length` filter).
+* New filter `publicize_with_hashtags_hashtags`.
+* Fixed the duplicate check, which skipped a tag when the message contained a longer hashtag starting with it (`#Word` and `#WordPress`).
+* Fixed messages containing backslashes.
+* Without a custom message, the hashtags are added when the post is published or scheduled, so that a draft no longer keeps an outdated title in the sharing message.
+* The plugin is now in maintenance mode.
+* Requires WordPress 5.6 and PHP 7.2.
+
 = 0.1.4 =
-* Fixed a bug for some auto-saved posts missing their title in their social text 
+* Fixed a bug for some auto-saved posts missing their title in their social text.
 
 = 0.1.3 =
-* Added WordPress 4.3 compatibility notice
+* Added WordPress 4.3 compatibility notice.
 
 = 0.1.2 =
-* Fixed a bug in hashtags generation
+* Fixed a bug in hashtags generation.
 
 = 0.1.1 =
-* Added an explicative screenshot
-* Added some Frequently Asked Questions
-* Small changes to readme.txt
+* Added an explicative screenshot.
+* Added some Frequently Asked Questions.
+* Small changes to readme.txt.
 
 = 0.1 =
 * First release.
 
-
-
 == Upgrade Notice ==
 
-= 0.1.4 =
-* Bugfix
-
-= 0.1.3 =
-* Added WordPress 4.3 compatibility notice
-
-= 0.1.2 =
-* Fixed a major bug
-
-= 0.1.1 =
-Updated installation guide, added FAQ and Screenshots sections.
-
-= 0.1 =
-First release.
-
-
-
-== Authors ==
-
-* **Darkseal** of [Ryadel.com](http://www.ryadel.com/).
-
-<?php code(); ?>
+= 0.2.0 =
+Works again with the block editor and with Jetpack Social. The 118-character limit is gone: use the publicize_with_hashtags_max_length filter if you need one.

@@ -1,88 +1,66 @@
 ﻿# Publicize With Hashtags
-PWH is a small WordPress plugin that will automatically append hashtags to any content sent by **Jetpack's Publicize** module. This means that **the plugin will work only if the Jetpack plugin is already installed on your Wordpress platform with the Publicize module set to active**. Don't worry, tho: if any of these requirements are missing this plugin won't do anything, without breaking your blog or compromising its performance in any way.
 
-## Description
+A small WordPress plugin that turns the tags of your posts into hashtags and appends them to the message that
+**Jetpack Social** (formerly Jetpack Publicize) shares on your social networks.
 
-**IMPORTANT**: This plugin requires Jetpack's Publicize module: read below for additional info.
+> **Maintenance mode.** The plugin receives compatibility and security fixes, but no new features. Jetpack Social now
+> has a built-in `{tags}` placeholder for its message templates: if your Jetpack plan includes message templates, you
+> can use it instead of this plugin. Issues and pull requests are still welcome.
 
-As the name says, this plugin will automatically append hashtags to any content sent by **Jetpack's Publicize** module. This means that **the plugin will work only if the Jetpack plugin is already installed on your Wordpress platform with the Publicize module set to active**. Don't worry, tho: if any of these requirements are missing this plugin won't do anything, without breaking your blog or compromising its performance in any way.
+## Features
 
-## Plugin Features
+- Works with the full **Jetpack** plugin (with the Social module active) and with the standalone **Jetpack Social**
+  plugin, in both the block editor and the classic editor. Without Jetpack Social it does nothing.
+- Each post tag becomes a hashtag, with its spaces removed: `Open Source` becomes `#OpenSource`.
+- Hashtags you write yourself are kept, and the plugin never adds a hashtag that is already in the message.
+- If the post has no custom message, the hashtags are appended to the post title.
+- Works with every post type that Jetpack Social can share, as long as it uses tags.
+- Posts that are already published are never changed.
+- Jetpack message templates, and messages that already use `{tags}`, are left untouched.
 
-* Hashtags will be created using the post `tags`, (optionally) trimming the space chars, until the maximum character length is reached (if any).
-* You'll still be able to manually add custom hashtags, pre-pending or appending them to the auto-generated ones just like you always did.
-* You can reorder the hashtags as you like, regardless of how they were added.
-* Dupe check included, ensuring that the same hashtag won't be included multiple times - unless you manually do that.
-* Automatically added hashtags won't break the *118-character limits* of the social message text to keep the message length under the standard *tweet + link* limit.
-* The above character-length threshold can be changed and/or set to infinite with ease.
+The hashtags are added when you publish or schedule the post, right before Jetpack shares it. If you have written a
+custom sharing message, they are also added every time you save a draft or a pending post, so you can see them and
+move them around before publishing.
+
+## Filters
+
+- `publicize_with_hashtags_hashtags` (`string[] $hashtags, WP_Post $post`): the hashtags, with the leading `#`, before
+  they are appended.
+- `publicize_with_hashtags_max_length` (`int $max_length, WP_Post $post`): maximum message length in characters;
+  hashtags that don't fit are not added. Default `0` (no limit).
+
+```php
+add_filter( 'publicize_with_hashtags_max_length', function () {
+	return 280;
+} );
+```
 
 ## Installation
 
-Go to the **Plugins > Add New...** panel in the WP Admin interface, search for "publicize with hashtags" and click **Install**.
+Install it from the [WordPress.org plugin directory](https://wordpress.org/plugins/publicize-with-hashtags/)
+(**Plugins > Add New Plugin**, search for "Publicize With Hashtags"), or download the ZIP attached to a
+[GitHub release](https://github.com/Darkseal/publicize-with-hashtags/releases) and upload it from
+**Plugins > Add New Plugin > Upload Plugin**.
 
-If you prefer to install the plugin manually, you can do the following:
+Requires WordPress 5.6 or later, PHP 7.2 or later, and Jetpack Social or Jetpack.
 
-1. Go to the [plugin page](https://wordpress.org/plugins/publicize-with-hashtags/) on the Wordpress Plugin Browser and click the **Download** button to get the latest version to your HDD.
-2. Upload the **publicize-with-hashtags.zip** file using the Wordpress *upload plugin* feature OR unpack its contents inside the `/wp-content/plugins/` folder.
-3. Activate the plugin through the 'Plugins' menu in WordPress.
-4. Take a look at the plugin's source code and change its default settings if needed.
+## Releases
 
-## Frequently Asked Questions
+Publishing a GitHub release deploys the plugin to WordPress.org through
+[10up/action-wordpress-plugin-deploy](https://github.com/10up/action-wordpress-plugin-deploy)
+(see [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)); the WordPress.org assets live in
+[`.wordpress-org/`](.wordpress-org/). The full changelog is in [`readme.txt`](readme.txt).
 
-#### What if I manually insert one or more hashtags?
+## Links
 
-They will be kept as they are: the plugin won't strip out anything, it will simply add the "missing" hashtags to the Custom Message box.
+- [Plugin page](https://wordpress.org/plugins/publicize-with-hashtags/) on WordPress.org.
+- [Installation and usage guide](https://www.ryadel.com/en/add-hashtags-to-jetpack-publicize-shared-posts/) at
+  Ryadel.com (written for the classic editor).
 
-#### What if I already inserted an hashtags identical to an existing post tag?
+## Author
 
-It won't be added again, as long as it's case-insensitive equal to the first one. The plugin will never insert a dupe hashtag on its own.
+**Darkseal** of [Ryadel.com](https://www.ryadel.com/).
 
+You can support this project by clicking the button below. Thanks a lot!
 
-## Screenshots
-
-![alt text](https://s.w.org/plugins/publicize-with-hashtags/screenshot-1.jpg?r=1217800 "Plugin at work on the Jetpack's Publicize Widget Custom Message box")
-
-*The plugin will automatically trasform your post tags to hashtags and append them to the Publicize Widget's Custom Message box. Any existing, manually inserted hashtag will be kept and/or won't be added a second time if also included as a tag.*
-
-
-## Useful Links
-
-* [Plugin official page](https://wordpress.org/plugins/publicize-with-hashtags/) on Wordpress.org Plugin Browser.
-* [Plugin SVN Repository](http://plugins.svn.wordpress.org/publicize-with-hashtags/) hosted by Wordpress.org (in real-time sync with the GitHub repo).
-* [Plugin GitHub Repository](https://github.com/Darkseal/publicize-with-hashtags) (in real-time sync with the SVN repo).
-* [Plugin GitHub Page](http://darkseal.github.io/publicize-with-hashtags/).
-* [Plugin official page](http://www.ryadel.com/works/publicize-with-hashtags/) at [Ryadel.com](http://www.ryadel.com/).
-* [Installation & Usage Guide](http://www.ryadel.com/en/add-hashtags-to-jetpack-publicize-shared-posts/) at [Ryadel.com](http://www.ryadel.com/).
-
-
-## Changelog
-
-#### 0.1.4
-* Fixed a bug for some auto-saved posts missing their title in their social text 
-
-#### 0.1.3
-* Added WordPress 4.3 compatibility notice
-
-#### 0.1.2
-* Fixed a bug in hashtags generation
-
-#### 0.1.1
-* Added an explicative screenshot
-* Added some Frequently Asked Questions
-* Small changes to readme.txt
-
-#### 0.1
-* First release.
-
-
-## Authors
-
-* **Darkseal** of [Ryadel.com](http://www.ryadel.com/).
-
-
-## Support
-You can support this project's development by clicking on the following button.
-  
-[<img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" alt="Donate">](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JSTHA4HMVSQ8J)
-  
- Thanks a lot!
+[<img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" alt="Donate">](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JSTHA4HMVSQ8J)

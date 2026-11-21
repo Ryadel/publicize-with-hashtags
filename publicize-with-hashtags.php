@@ -1,13 +1,16 @@
 <?php
-/*
-Plugin Name: Publicize With Hashtags
-Plugin URI: http://www.ryadel.com/works/publicize-with-hashtags/
-Description: Automatically append hashtags to any content sent by Jetpack's Publicize module: hashtags will be created using post tags: dupe check and an optional length-based threshold are also included.
-Version: 0.1.4
-License: GPLv2 or later
-Author: Darkseal
-Author URI: http://www.ryadel.com/
-*/
+/**
+ * Plugin Name:       Publicize With Hashtags
+ * Plugin URI:        https://github.com/Darkseal/publicize-with-hashtags
+ * Description:       Appends the post tags, as hashtags, to the message that Jetpack Social (formerly Publicize) shares on your social networks.
+ * Version:           0.2.0
+ * Requires at least: 5.6
+ * Requires PHP:      7.2
+ * Author:            Darkseal
+ * Author URI:        https://www.ryadel.com/
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ */
 
 /*
 This program is free software; you can redistribute it and/or
@@ -23,79 +26,163 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+*/
 
-// If Jetpack is not installed or Publicize module isn't active, just exit now.
-if (!class_exists('Jetpack') || !Jetpack::is_module_active('publicize')) return;
-
-// Main function
-function publicize_with_hashtags($ignorePostStatus = false) {
-    
-    // Set an optional character threshold (set to null to disable).
-    // If you set it as a positive integer, hashtags will be appended only until this threshold is reached. 
-    // Default is 118, which is good for Twitter considering a default, non-https url length, which is 22 chars as stated by Twitter standards.
-    // For more info, see https://dev.twitter.com/overview/api/counting-characters and https://dev.twitter.com/overview/t.co Twitter official docs.
-    // Suggested values: 
-    // 118      if you plan to use only HTTP URLs
-    // 117      if you plan to use both HTTP and HTTPS (or only HTTPS) URLs
-    // 140      if you don't plan to append URL infos to your posts
-    // 0        or <null> or <false>, if you want to tufn-off this check and append hashtags without any char limits - good if you're only using Facebook sharing.
-    $mess_max_length = 118;
-    
-    // Set it to TRUE to strip all spaces when converting Tags to Hashtags, i.e. 'Windows 8' -> '#Windows8', FALSE to keep only first.
-    // Default is TRUE (strip all spaces).
-    $strip_spaces = true;
-    
-    // meta tag used by Publicize to store social message. Change this only if you're really know what you're doing.
-    // If you do and you feel like you should, please contact me so I'll update the plugin aswell.
-    $meta = '_wpas_mess';
-    
-    $p = get_post();
-    if (empty($p)) return;
-    // If the post is already published do nothing, unless $ignorePostStatus is set to TRUE
-    if (!$ignorePostStatus && $p->post_status === 'publish') return;
-    // Get the current post social message
-    $mess = get_post_meta($p->ID, $meta, true);
-    // If there's no current post social message, get the title
-    if (empty($mess)) $mess = $p->post_title;
-    else {
-        // Safety net: if the post contains hashtags only, prepend the title.
-        // This fixes an edge-case scenario when the post get auto-saved before having a proper title set.
-        if ($mess[0] == "#") {
-            $a = explode(" ", $mess);
-            $onlyHashtags = true;
-            foreach ($a as $w) {
-                if ($w[0] != "#") {
-                    $onlyHashtags = false;
-                    break;
-                }
-            }
-            if ($onlyHashtags) $mess = $p->post_title ." ". $mess;
-        }
-    }
-    // Performance-wise length check: do nothing if we've already reached or surpassed the threshold (if set).
-    if (!empty($mess) && !empty($mess_max_length) && $mess_max_length <= (strlen($mess))) return;
-    // Get the post tags array
-    $ta = get_the_tags($p->ID);	
-    // Performance-wise tag check: do nothing if we don't (yet) have tags to process.
-    if (empty($ta)) return;
-
-    // From now on, we mean business. Let's start by initializing the social message (if needed).
-    if (empty($mess)) $mess = '';
-    // Create list of tags with hashtags in front of them until threshold is reached
-    foreach ($ta as $t) {
-        // Create the hashtag, stripping spaces if needed.
-        $ht = '#' . (($strip_spaces) ? str_replace(' ', '', $t->name) : $t->name);
-        // only process newly-added hashtags, skipping duplicate ones
-        if (stripos($mess,$ht) === false) {	
-            if (!empty($mess_max_length) && $mess_max_length <= (strlen($mess) + strlen($ht))) break;
-            $mess .= ' '.$ht;
-        }
-    }
-    // Update the new social message
-    update_post_meta($p->ID, $meta, $mess);
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-// Hook the plugin action to 'save_post' handler.
-add_action('save_post', 'publicize_with_hashtags', 99);
-?>
+/**
+ * Post meta where Jetpack Social stores the custom sharing message
+ * (exposed to the block editor as `jetpack_publicize_message`).
+ */
+const PUBLICIZE_WITH_HASHTAGS_META = '_wpas_mess';
+
+/*
+ * `wp_after_insert_post` fires once the post, its terms and its REST meta are all saved, in both the block editor and
+ * the classic editor. Priority 10 runs before Jetpack Sync (priority 11), which queues the post for sharing.
+ */
+add_action( 'wp_after_insert_post', 'publicize_with_hashtags', 10, 4 );
+
+/**
+ * Appends the post tags, as hashtags, to the Jetpack Social message of the post.
+ *
+ * Runs while the post is a draft, pending or scheduled, and when it gets published; it never touches a post that was
+ * already published, because Jetpack has already shared it.
+ *
+ * @param int          $post_id     Post ID.
+ * @param WP_Post      $post        Post object.
+ * @param bool         $update      Whether this is an existing post being updated.
+ * @param WP_Post|null $post_before Post object before the update, null for new posts.
+ */
+function publicize_with_hashtags( $post_id, $post, $update = false, $post_before = null ) {
+	if ( ! $post instanceof WP_Post || wp_is_post_revision( $post ) || wp_is_post_autosave( $post ) ) {
+		return;
+	}
+	if ( ! in_array( $post->post_status, array( 'draft', 'pending', 'future', 'publish' ), true ) ) {
+		return;
+	}
+	if ( $post_before instanceof WP_Post && 'publish' === $post_before->post_status ) {
+		return;
+	}
+	if ( ! post_type_supports( $post->post_type, 'publicize' ) || ! publicize_with_hashtags_is_publicize_active() ) {
+		return;
+	}
+
+	$meta     = PUBLICIZE_WITH_HASHTAGS_META;
+	$template = function_exists( 'get_metadata_default' ) ? (string) get_metadata_default( 'post', $post->ID, $meta, true ) : '';
+	$message  = metadata_exists( 'post', $post->ID, $meta ) ? (string) get_post_meta( $post->ID, $meta, true ) : '';
+
+	// The site uses a Jetpack message template (paid plans): leave it alone, so that Jetpack fills its placeholders.
+	// Add {tags} to the template to get the hashtags.
+	if ( '' !== trim( $template ) && ( '' === trim( $message ) || $message === $template ) ) {
+		return;
+	}
+	// Jetpack already turns the tags into hashtags.
+	if ( false !== stripos( $message, '{tags}' ) ) {
+		return;
+	}
+	// Without a custom message the plugin starts from the title: wait until the post is published or scheduled, when
+	// the title is final, so that a draft doesn't freeze an old title in the message.
+	if ( '' === trim( $message ) && ! in_array( $post->post_status, array( 'future', 'publish' ), true ) ) {
+		return;
+	}
+
+	$hashtags = array();
+	$tags     = get_the_terms( $post, 'post_tag' );
+	if ( is_array( $tags ) ) {
+		foreach ( $tags as $tag ) {
+			$hashtag = preg_replace( '/\s+/u', '', wp_specialchars_decode( $tag->name, ENT_QUOTES ) );
+			if ( '' !== $hashtag ) {
+				$hashtags[] = '#' . $hashtag;
+			}
+		}
+	}
+
+	/**
+	 * Filters the hashtags to append to the Jetpack Social message.
+	 *
+	 * @param string[] $hashtags Hashtags, including the leading '#', in tag order.
+	 * @param WP_Post  $post     The post being saved.
+	 */
+	$hashtags = (array) apply_filters( 'publicize_with_hashtags_hashtags', $hashtags, $post );
+	if ( empty( $hashtags ) ) {
+		return;
+	}
+
+	/**
+	 * Filters the maximum length of the message: hashtags that would exceed it are not added. 0 means no limit.
+	 *
+	 * @param int     $max_length Maximum message length, in characters. Default 0.
+	 * @param WP_Post $post       The post being saved.
+	 */
+	$max_length = (int) apply_filters( 'publicize_with_hashtags_max_length', 0, $post );
+
+	$new_message = publicize_with_hashtags_append( $message, $post->post_title, $hashtags, $max_length );
+	if ( $new_message !== $message ) {
+		update_post_meta( $post->ID, $meta, wp_slash( $new_message ) );
+	}
+}
+
+/**
+ * Builds the new message: the current one (or the post title, if empty) followed by the hashtags it doesn't contain yet.
+ *
+ * @param string   $message    Current message.
+ * @param string   $title      Post title.
+ * @param string[] $hashtags   Hashtags to append.
+ * @param int      $max_length Maximum message length; 0 means no limit.
+ * @return string
+ */
+function publicize_with_hashtags_append( $message, $title, $hashtags, $max_length = 0 ) {
+	$message = trim( $message );
+
+	// No message, or a message made of hashtags only (e.g. a draft saved before it had a title): start from the title.
+	if ( '' === $message || preg_match( '/^#\S+(\s+#\S+)*$/u', $message ) ) {
+		$message = trim( $title . ' ' . $message );
+	}
+
+	foreach ( $hashtags as $hashtag ) {
+		$hashtag = (string) $hashtag;
+		if ( '' === $hashtag || '#' === $hashtag ) {
+			continue;
+		}
+		// Skip hashtags that are already in the message, as a whole word and ignoring case (#Word doesn't match #WordPress).
+		if ( preg_match( '/(?<![\p{L}\p{N}_#])' . preg_quote( $hashtag, '/' ) . '(?![\p{L}\p{N}_])/iu', $message ) ) {
+			continue;
+		}
+		$candidate = '' === $message ? $hashtag : $message . ' ' . $hashtag;
+		// Too long: skip it, a shorter hashtag may still fit.
+		if ( $max_length > 0 && publicize_with_hashtags_strlen( $candidate ) > $max_length ) {
+			continue;
+		}
+		$message = $candidate;
+	}
+
+	return $message;
+}
+
+/**
+ * Whether the Jetpack Social (Publicize) module is active, with the full Jetpack plugin or the standalone Jetpack Social.
+ *
+ * @return bool
+ */
+function publicize_with_hashtags_is_publicize_active() {
+	if ( class_exists( '\Automattic\Jetpack\Modules' ) ) {
+		return ( new \Automattic\Jetpack\Modules() )->is_active( 'publicize' );
+	}
+	// Older Jetpack versions.
+	if ( class_exists( 'Jetpack' ) && method_exists( 'Jetpack', 'is_module_active' ) ) {
+		return Jetpack::is_module_active( 'publicize' );
+	}
+	return false;
+}
+
+/**
+ * String length in characters, with a fallback for sites without mbstring.
+ *
+ * @param string $text Text.
+ * @return int
+ */
+function publicize_with_hashtags_strlen( $text ) {
+	return function_exists( 'mb_strlen' ) ? mb_strlen( $text, 'UTF-8' ) : (int) preg_match_all( '/./us', $text );
+}

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Publicize With Hashtags
- * Plugin URI:        https://github.com/Darkseal/publicize-with-hashtags
+ * Plugin URI:        https://github.com/Ryadel/publicize-with-hashtags
  * Description:       Appends the post tags, as hashtags, to the message that Jetpack Social (formerly Publicize) shares on your social networks.
  * Version:           0.2.0
  * Requires at least: 5.6

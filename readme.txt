@@ -29,7 +29,7 @@ It works with the full **Jetpack** plugin (with the Social module active) and wi
 
 **Useful links**
 
-* [GitHub repository](https://github.com/Darkseal/publicize-with-hashtags) (issues and pull requests).
+* [GitHub repository](https://github.com/Ryadel/publicize-with-hashtags) (issues and pull requests).
 * [Installation and usage guide](https://www.ryadel.com/en/add-hashtags-to-jetpack-publicize-shared-posts/) at Ryadel.com (written for the classic editor).
 
 == Installation ==

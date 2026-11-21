@@ -39,7 +39,7 @@ add_filter( 'publicize_with_hashtags_max_length', function () {
 
 Install it from the [WordPress.org plugin directory](https://wordpress.org/plugins/publicize-with-hashtags/)
 (**Plugins > Add New Plugin**, search for "Publicize With Hashtags"), or download the ZIP attached to a
-[GitHub release](https://github.com/Darkseal/publicize-with-hashtags/releases) and upload it from
+[GitHub release](https://github.com/Ryadel/publicize-with-hashtags/releases) and upload it from
 **Plugins > Add New Plugin > Upload Plugin**.
 
 Requires WordPress 5.6 or later, PHP 7.2 or later, and Jetpack Social or Jetpack.

@@ -1,4 +1,4 @@
-﻿=== Publicize With Hashtags ===
+=== Publicize With Hashtags ===
 Contributors: neilgaiman
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JSTHA4HMVSQ8J
 Tags: jetpack, jetpack social, publicize, hashtags, social

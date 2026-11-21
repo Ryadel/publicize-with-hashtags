@@ -1,4 +1,4 @@
-﻿# Publicize With Hashtags
+# Publicize With Hashtags
 
 A small WordPress plugin that turns the tags of your posts into hashtags and appends them to the message that
 **Jetpack Social** (formerly Jetpack Publicize) shares on your social networks.
